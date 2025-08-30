@@ -297,7 +297,150 @@ private Guardian guardian;
 
 ---
 
-If you want, I can now add a `.md` section for **custom queries using `@Query` annotation**, so you’re ready when you need more control over your SQL. Want me to prep that next?
+# **Spring Data JPA – `@Query` Annotation**
 
+## **22. Purpose**
+- Allows writing **custom queries** directly on repository methods.
+- Supports:
+    - **JPQL** (Java Persistence Query Language) → works with **entity names** & **fields**.
+    - **Native SQL** → works with **table names** & **column names** (`nativeQuery = true`).
+
+---
+
+## ✅ Examples from `StudentRepository`
+
+### JPQL – Selecting Specific Field
+```java
+@Query("SELECT s.firstName FROM Student s WHERE s.emailId = ?1")
+String getStudentFirstNameByEmailAddress(String emailId);
+```
+- **Query:** Uses entity name `Student` and field `firstName`.
+- **Use Case:** Fetch only the first name for a given email.
+- **Notes:** JPQL is **database-independent**.
+
+---
+
+### JPQL – Named Parameters
+```java
+@Query("SELECT s FROM Student s WHERE s.emailId = :email")
+Student findByEmail(@Param("email") String emailId);
+```
+- **Query:** Uses `:email` as a named parameter.
+- **Benefit:** Improves readability and avoids confusion with multiple parameters.
+
+---
+
+### Native SQL – Full Entity
+```java
+@Query(value = "SELECT * FROM student WHERE guardian_name = ?1", nativeQuery = true)
+List<Student> findByGuardianNameNative(String guardianName);
+```
+- **Query:** Uses actual table & column names.
+- **Use Case:** When JPQL can’t express the query or DB-specific features are needed.
+
+---
+
+### Native SQL – Partial Column Selection
+```java
+@Query(value = "SELECT first_name FROM student WHERE email_id = ?1", nativeQuery = true)
+String getFirstNameByEmailNative(String emailId);
+```
+- **Return Type:** Must match the selected column type (`String` here).
+- **Note:** For multiple columns, use `Object[]` or a DTO projection.
+
+---
+
+## 💡 Parameter Binding
+| Type | Syntax | Example |
+|------|--------|---------|
+| **Positional** | `?1`, `?2` | `WHERE s.emailId = ?1` |
+| **Named** | `:paramName` | `WHERE s.emailId = :email` |
+
+---
+# **Spring Data JPA – Update Queries**
+
+When you need to perform **update operations** directly from the repository, you can use a combination of annotations to define custom update queries.
+
+# **Custom Update Query Annotations**
+
+## **22. @Query**
+```java
+@Query(
+    value = "UPDATE tbl_student SET first_name = :name WHERE email_address = :emailId",
+    nativeQuery = true
+)
+```
+- **Purpose:** Allows writing custom JPQL or native SQL queries.
+- **Parameters:**
+    - `value`: The query string.
+    - `nativeQuery = true`: Indicates this is raw SQL (not JPQL).
+- **Notes:**
+    - For JPQL, use entity names and field names instead of table/column names.
+    - For native SQL, use actual table and column names.
+
+---
+
+## **23. @Modifying**
+```java
+@Modifying
+```
+- **Purpose:** Marks a query method as an **update/delete** operation.
+- **Why Needed:**
+    - By default, `@Query` is for `SELECT` queries.
+    - Without `@Modifying`, Spring Data JPA will expect a result set and throw an error.
+- **Notes:**
+    - Works with `UPDATE`, `DELETE`, and `INSERT` queries.
+    - Returns `int` or `long` → number of rows affected.
+
+---
+
+## **24. @Transactional**
+```java
+@Transactional
+```
+- **Purpose:** Ensures the update query runs inside a transaction.
+- **Why Needed:**
+    - Update/delete queries must be executed within a transaction to commit changes.
+- **Notes:**
+    - Can be placed at method or class level.
+    - For read-only queries, use `@Transactional(readOnly = true)`.
+
+---
+
+## **25. @Param**
+```java
+@Param("name") String firstName
+```
+- **Purpose:** Binds a method parameter to a named parameter in the query.
+- **Notes:**
+    - The string inside `@Param` must match the `:parameterName` in the query.
+    - If you don’t use `@Param`, Spring matches parameters by position.
+
+---
+
+## ✅ Example Method
+```java
+@Modifying
+@Transactional
+@Query(
+    value = "UPDATE tbl_student SET first_name = :name WHERE email_address = :emailId",
+    nativeQuery = true
+)
+int updateStudentNameByEmailId(@Param("name") String firstName, String emailId);
+```
+- **Effect:** Updates the `first_name` column for the student with the given `email_address`.
+- **Return:** Number of rows updated.
+
+---
+
+💡 **Pro Tips:**
+- Keep update/delete queries in service layer for better separation of concerns.
+- If you use JPQL instead of native SQL:
+```java
+@Query("UPDATE Student s SET s.firstName = :name WHERE s.emailId = :emailId")
+```
+- Always test update queries — they bypass entity lifecycle callbacks.
+
+---
 
 
