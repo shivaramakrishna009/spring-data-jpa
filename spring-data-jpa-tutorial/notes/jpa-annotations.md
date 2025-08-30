@@ -240,5 +240,64 @@ private Guardian guardian;
 
 ---
 
+# **Spring Data JPA – Derived Query Methods**
+
+## **21. Method Naming Convention**
+- Spring Data JPA can **auto-generate queries** based on method names.
+- Format: `findBy<FieldName>[Condition]`
+- No need to write `@Query` or native SQL — Spring parses the method name and builds the query.
+
+---
+
+## ✅ Examples from `StudentRepository`
+
+### `findByFirstName(String firstName)`
+- **Query:** `SELECT * FROM student WHERE first_name = ?`
+- **Use Case:** Exact match on first name.
+
+---
+
+### `findByFirstNameContaining(String name)`
+- **Query:** `SELECT * FROM student WHERE first_name LIKE %?%`
+- **Use Case:** Partial match (substring search).
+- **Notes:** Equivalent to SQL `LIKE '%name%'`.
+
+---
+
+### `findByLastNameNotNull()`
+- **Query:** `SELECT * FROM student WHERE last_name IS NOT NULL`
+- **Use Case:** Fetch students with a last name present.
+
+---
+
+### `findByGuardianName(String guardianName)`
+- **Query:** `SELECT * FROM student WHERE guardian_name = ?`
+- **Use Case:** Match embedded field directly (flattened into student table via `@Embedded`).
+
+---
+
+## 💡 Supported Keywords
+| Keyword | SQL Equivalent |
+|--------|----------------|
+| `IsNull` / `NotNull` | `IS NULL` / `IS NOT NULL` |
+| `Containing` | `LIKE %value%` |
+| `StartingWith` | `LIKE value%` |
+| `EndingWith` | `LIKE %value` |
+| `IgnoreCase` | Case-insensitive match |
+| `Between` | Range query |
+| `OrderBy` | Sorting |
+| `And` / `Or` | Logical operators |
+
+---
+
+## ✅ Best Practices
+- Keep method names readable and expressive.
+- Use `Containing`, `StartingWith`, etc. for flexible search.
+- For complex queries, switch to `@Query` with JPQL or native SQL.
+
+---
+
+If you want, I can now add a `.md` section for **custom queries using `@Query` annotation**, so you’re ready when you need more control over your SQL. Want me to prep that next?
+
 
 

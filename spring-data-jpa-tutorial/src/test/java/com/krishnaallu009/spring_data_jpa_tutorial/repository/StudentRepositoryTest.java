@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.List;
+
 @SpringBootTest
 class StudentRepositoryTest {
 
@@ -46,4 +48,23 @@ class StudentRepositoryTest {
     public void printAllStudents() {
         System.out.println(studentRepository.findAll());
     }
+
+    @Test
+    public void printStudentsByFirstName() {
+        List<Student> students = studentRepository.findByFirstName("Krishna");
+        System.out.println("Students = " + students);
+    }
+
+    @Test
+    public void printStudentsByFirstNameContaining() {
+        List<Student> students = studentRepository.findByFirstNameContaining("ish");
+        System.out.println("Students = " + students);
+    }
+
+    @Test
+    public void printStudentsBasedOnGuardianName() {
+        List<Student> students = studentRepository.findByGuardianName("Bhanu");
+        System.out.println("Students = " + students);
+    }
+
 }
