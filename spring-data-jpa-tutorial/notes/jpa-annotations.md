@@ -95,4 +95,209 @@ Student.builder()
        .emailId("siva@example.com")
        .build();
 ```
+---
+
+## **11. @Repository**
+```java
+@Repository
+public interface StudentRepository extends JpaRepository<Student, Long> {
+}
+```
+- **Purpose:** Marks the class/interface as a Spring Data Repository.
+- **Notes:**
+    - Optional for interfaces extending `JpaRepository` — Spring will still detect them automatically.
+    - Useful for exception translation (converts JPA exceptions into Spring’s `DataAccessException` hierarchy).
+
+---
+
+## **12. JpaRepository**
+```java
+public interface StudentRepository extends JpaRepository<Student, Long> { }
+```
+- **Purpose:** Provides CRUD operations, pagination, and query methods for an entity.
+- **Type Parameters:**
+    - First: Entity type (`Student`)
+    - Second: Primary key type (`Long`)
+- **Common Methods:**
+    - `save(entity)` → Insert or update
+    - `findById(id)` → Retrieve by primary key
+    - `findAll()` → Retrieve all records
+    - `deleteById(id)` → Delete by primary key
+
+---
+
+## **13. @Autowired**
+```java
+@Autowired
+private StudentRepository studentRepository;
+```
+- **Purpose:** Injects a Spring-managed bean into another bean.
+- **Notes:**
+    - Can be used on fields, constructors, or setters.
+    - Constructor injection is generally preferred for immutability and testability.
+
+---
+
+## **14. @SpringBootTest**
+```java
+@SpringBootTest
+class StudentRepositoryTest { ... }
+```
+- **Purpose:** Loads the full Spring application context for integration testing.
+- **Notes:**
+    - Slower than unit tests because it starts the entire context.
+    - Ideal for testing repository and service layers together.
+
+---
+
+## **15. @Test** *(JUnit 5)*
+```java
+@Test
+void saveStudentTest() { ... }
+```
+- **Purpose:** Marks a method as a test case.
+- **Notes:** Comes from `org.junit.jupiter.api.Test`.
+
+---
+
+💡 **Pro Tip:**  
+For repository tests, you can also use `@DataJpaTest` instead of `@SpringBootTest` — it loads only JPA-related components and uses an in-memory database by default, making tests faster.
+
+---
+
+Absolutely, Siva — this is a great move toward clean, modular entity design. Here's your **ready-to-paste `.md` note section** for the `Guardian` class and all the annotations you've used:
+
+---
+
+# **Embedded Entity – Guardian Class**
+
+## **16. @Embeddable**
+```java
+@Embeddable
+public class Guardian { ... }
+```
+- **Purpose:** Marks a class whose fields can be embedded into another entity.
+- **Usage:** Used with `@Embedded` in the parent entity (e.g., `Student`).
+- **Notes:** No separate table is created — fields are flattened into the parent table.
+
+---
+
+## **17. @Embedded**
+```java
+@Embedded
+private Guardian guardian;
+```
+- **Purpose:** Embeds the fields of an `@Embeddable` class into the entity.
+- **Effect:** Guardian’s fields (`name`, `email`, `mobile`) become columns in the `Student` table.
+
+---
+
+## **18. @AttributeOverride**
+```java
+@AttributeOverride(
+    name = "name",
+    column = @Column(name = "guardian_name")
+)
+```
+- **Purpose:** Overrides the default column name for a specific field in the embedded class.
+- **Usage:** Used when you want to rename embedded fields in the parent table.
+
+---
+
+## **19. @AttributeOverrides**
+```java
+@AttributeOverrides({
+    @AttributeOverride(name = "name", column = @Column(name = "guardian_name")),
+    @AttributeOverride(name = "email", column = @Column(name = "guardian_email")),
+    @AttributeOverride(name = "mobile", column = @Column(name = "guardian_mobile"))
+})
+```
+- **Purpose:** Allows multiple `@AttributeOverride` annotations.
+- **Notes:** Required when embedding a class with multiple fields that need custom column names.
+
+---
+
+## **20. Lombok in Embeddable**
+- `@Data` → Generates getters/setters and utility methods.
+- `@AllArgsConstructor` → Full constructor.
+- `@NoArgsConstructor` → Required by JPA.
+- `@Builder` → Enables builder pattern for clean object creation.
+
+---
+
+## ✅ Example Usage in `Student` Entity
+```java
+@Embedded
+private Guardian guardian;
+```
+
+## ✅ Resulting Table Columns
+| Field in Guardian | Column in Student Table |
+|-------------------|-------------------------|
+| `name`            | `guardian_name`         |
+| `email`           | `guardian_email`        |
+| `mobile`          | `guardian_mobile`       |
+
+---
+
+# **Spring Data JPA – Derived Query Methods**
+
+## **21. Method Naming Convention**
+- Spring Data JPA can **auto-generate queries** based on method names.
+- Format: `findBy<FieldName>[Condition]`
+- No need to write `@Query` or native SQL — Spring parses the method name and builds the query.
+
+---
+
+## ✅ Examples from `StudentRepository`
+
+### `findByFirstName(String firstName)`
+- **Query:** `SELECT * FROM student WHERE first_name = ?`
+- **Use Case:** Exact match on first name.
+
+---
+
+### `findByFirstNameContaining(String name)`
+- **Query:** `SELECT * FROM student WHERE first_name LIKE %?%`
+- **Use Case:** Partial match (substring search).
+- **Notes:** Equivalent to SQL `LIKE '%name%'`.
+
+---
+
+### `findByLastNameNotNull()`
+- **Query:** `SELECT * FROM student WHERE last_name IS NOT NULL`
+- **Use Case:** Fetch students with a last name present.
+
+---
+
+### `findByGuardianName(String guardianName)`
+- **Query:** `SELECT * FROM student WHERE guardian_name = ?`
+- **Use Case:** Match embedded field directly (flattened into student table via `@Embedded`).
+
+---
+
+## 💡 Supported Keywords
+| Keyword | SQL Equivalent |
+|--------|----------------|
+| `IsNull` / `NotNull` | `IS NULL` / `IS NOT NULL` |
+| `Containing` | `LIKE %value%` |
+| `StartingWith` | `LIKE value%` |
+| `EndingWith` | `LIKE %value` |
+| `IgnoreCase` | Case-insensitive match |
+| `Between` | Range query |
+| `OrderBy` | Sorting |
+| `And` / `Or` | Logical operators |
+
+---
+
+## ✅ Best Practices
+- Keep method names readable and expressive.
+- Use `Containing`, `StartingWith`, etc. for flexible search.
+- For complex queries, switch to `@Query` with JPQL or native SQL.
+
+---
+
+If you want, I can now add a `.md` section for **custom queries using `@Query` annotation**, so you’re ready when you need more control over your SQL. Want me to prep that next?
+
+
 
