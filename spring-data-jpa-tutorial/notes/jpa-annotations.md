@@ -95,4 +95,75 @@ Student.builder()
        .emailId("siva@example.com")
        .build();
 ```
+---
+
+## **11. @Repository**
+```java
+@Repository
+public interface StudentRepository extends JpaRepository<Student, Long> {
+}
+```
+- **Purpose:** Marks the class/interface as a Spring Data Repository.
+- **Notes:**
+    - Optional for interfaces extending `JpaRepository` — Spring will still detect them automatically.
+    - Useful for exception translation (converts JPA exceptions into Spring’s `DataAccessException` hierarchy).
+
+---
+
+## **12. JpaRepository**
+```java
+public interface StudentRepository extends JpaRepository<Student, Long> { }
+```
+- **Purpose:** Provides CRUD operations, pagination, and query methods for an entity.
+- **Type Parameters:**
+    - First: Entity type (`Student`)
+    - Second: Primary key type (`Long`)
+- **Common Methods:**
+    - `save(entity)` → Insert or update
+    - `findById(id)` → Retrieve by primary key
+    - `findAll()` → Retrieve all records
+    - `deleteById(id)` → Delete by primary key
+
+---
+
+## **13. @Autowired**
+```java
+@Autowired
+private StudentRepository studentRepository;
+```
+- **Purpose:** Injects a Spring-managed bean into another bean.
+- **Notes:**
+    - Can be used on fields, constructors, or setters.
+    - Constructor injection is generally preferred for immutability and testability.
+
+---
+
+## **14. @SpringBootTest**
+```java
+@SpringBootTest
+class StudentRepositoryTest { ... }
+```
+- **Purpose:** Loads the full Spring application context for integration testing.
+- **Notes:**
+    - Slower than unit tests because it starts the entire context.
+    - Ideal for testing repository and service layers together.
+
+---
+
+## **15. @Test** *(JUnit 5)*
+```java
+@Test
+void saveStudentTest() { ... }
+```
+- **Purpose:** Marks a method as a test case.
+- **Notes:** Comes from `org.junit.jupiter.api.Test`.
+
+---
+
+💡 **Pro Tip:**  
+For repository tests, you can also use `@DataJpaTest` instead of `@SpringBootTest` — it loads only JPA-related components and uses an in-memory database by default, making tests faster.
+
+---
+
+
 
