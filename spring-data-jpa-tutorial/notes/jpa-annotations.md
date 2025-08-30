@@ -297,7 +297,66 @@ private Guardian guardian;
 
 ---
 
-If you want, I can now add a `.md` section for **custom queries using `@Query` annotation**, so you’re ready when you need more control over your SQL. Want me to prep that next?
+# **Spring Data JPA – `@Query` Annotation**
+
+## **22. Purpose**
+- Allows writing **custom queries** directly on repository methods.
+- Supports:
+    - **JPQL** (Java Persistence Query Language) → works with **entity names** & **fields**.
+    - **Native SQL** → works with **table names** & **column names** (`nativeQuery = true`).
+
+---
+
+## ✅ Examples from `StudentRepository`
+
+### JPQL – Selecting Specific Field
+```java
+@Query("SELECT s.firstName FROM Student s WHERE s.emailId = ?1")
+String getStudentFirstNameByEmailAddress(String emailId);
+```
+- **Query:** Uses entity name `Student` and field `firstName`.
+- **Use Case:** Fetch only the first name for a given email.
+- **Notes:** JPQL is **database-independent**.
+
+---
+
+### JPQL – Named Parameters
+```java
+@Query("SELECT s FROM Student s WHERE s.emailId = :email")
+Student findByEmail(@Param("email") String emailId);
+```
+- **Query:** Uses `:email` as a named parameter.
+- **Benefit:** Improves readability and avoids confusion with multiple parameters.
+
+---
+
+### Native SQL – Full Entity
+```java
+@Query(value = "SELECT * FROM student WHERE guardian_name = ?1", nativeQuery = true)
+List<Student> findByGuardianNameNative(String guardianName);
+```
+- **Query:** Uses actual table & column names.
+- **Use Case:** When JPQL can’t express the query or DB-specific features are needed.
+
+---
+
+### Native SQL – Partial Column Selection
+```java
+@Query(value = "SELECT first_name FROM student WHERE email_id = ?1", nativeQuery = true)
+String getFirstNameByEmailNative(String emailId);
+```
+- **Return Type:** Must match the selected column type (`String` here).
+- **Note:** For multiple columns, use `Object[]` or a DTO projection.
+
+---
+
+## 💡 Parameter Binding
+| Type | Syntax | Example |
+|------|--------|---------|
+| **Positional** | `?1`, `?2` | `WHERE s.emailId = ?1` |
+| **Named** | `:paramName` | `WHERE s.emailId = :email` |
+
+---
 
 
 
