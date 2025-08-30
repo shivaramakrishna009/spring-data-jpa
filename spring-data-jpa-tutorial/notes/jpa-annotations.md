@@ -165,5 +165,80 @@ For repository tests, you can also use `@DataJpaTest` instead of `@SpringBootTes
 
 ---
 
+Absolutely, Siva — this is a great move toward clean, modular entity design. Here's your **ready-to-paste `.md` note section** for the `Guardian` class and all the annotations you've used:
+
+---
+
+# **Embedded Entity – Guardian Class**
+
+## **16. @Embeddable**
+```java
+@Embeddable
+public class Guardian { ... }
+```
+- **Purpose:** Marks a class whose fields can be embedded into another entity.
+- **Usage:** Used with `@Embedded` in the parent entity (e.g., `Student`).
+- **Notes:** No separate table is created — fields are flattened into the parent table.
+
+---
+
+## **17. @Embedded**
+```java
+@Embedded
+private Guardian guardian;
+```
+- **Purpose:** Embeds the fields of an `@Embeddable` class into the entity.
+- **Effect:** Guardian’s fields (`name`, `email`, `mobile`) become columns in the `Student` table.
+
+---
+
+## **18. @AttributeOverride**
+```java
+@AttributeOverride(
+    name = "name",
+    column = @Column(name = "guardian_name")
+)
+```
+- **Purpose:** Overrides the default column name for a specific field in the embedded class.
+- **Usage:** Used when you want to rename embedded fields in the parent table.
+
+---
+
+## **19. @AttributeOverrides**
+```java
+@AttributeOverrides({
+    @AttributeOverride(name = "name", column = @Column(name = "guardian_name")),
+    @AttributeOverride(name = "email", column = @Column(name = "guardian_email")),
+    @AttributeOverride(name = "mobile", column = @Column(name = "guardian_mobile"))
+})
+```
+- **Purpose:** Allows multiple `@AttributeOverride` annotations.
+- **Notes:** Required when embedding a class with multiple fields that need custom column names.
+
+---
+
+## **20. Lombok in Embeddable**
+- `@Data` → Generates getters/setters and utility methods.
+- `@AllArgsConstructor` → Full constructor.
+- `@NoArgsConstructor` → Required by JPA.
+- `@Builder` → Enables builder pattern for clean object creation.
+
+---
+
+## ✅ Example Usage in `Student` Entity
+```java
+@Embedded
+private Guardian guardian;
+```
+
+## ✅ Resulting Table Columns
+| Field in Guardian | Column in Student Table |
+|-------------------|-------------------------|
+| `name`            | `guardian_name`         |
+| `email`           | `guardian_email`        |
+| `mobile`          | `guardian_mobile`       |
+
+---
+
 
 
