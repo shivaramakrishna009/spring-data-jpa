@@ -85,4 +85,10 @@ class StudentRepositoryTest {
         System.out.println("Student = " + student);
     }
 
+    @Test
+    public void updateStudentNameByEmailIdTest() {
+        int rowsUpdated = studentRepository.updateStudentNameByEmailId("Siva ram", "krishnaallu@gmail.com");
+        System.out.println("Number of rows updated: " + rowsUpdated);
+    }
+
 }
