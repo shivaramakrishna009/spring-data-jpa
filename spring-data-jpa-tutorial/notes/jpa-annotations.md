@@ -871,3 +871,110 @@ teacher_id  FK → TEACHER.teacherId
 ```
 
 ---
+
+## **37. @Transactional**
+
+### ✅ Purpose
+- Marks a method or class to be executed **within a database transaction**.
+- Ensures **atomicity** — all operations inside either **complete successfully** or **roll back** on failure.
+
+---
+
+### 📌 Syntax
+```java
+@Transactional
+public void updateStudentData() {
+    // DB operations here
+}
+```
+
+---
+
+### 🧠 Key Points
+- **Scope**:
+    - At **method level** → applies to that method only.
+    - At **class level** → applies to all public methods in the class.
+- **Rollback Behavior**:
+    - By default, rolls back on **unchecked exceptions** (`RuntimeException`, `Error`).
+    - Can be configured to roll back on checked exceptions too:
+      ```java
+      @Transactional(rollbackFor = Exception.class)
+      ```
+- **Propagation**:
+    - Defines how transactions behave when a method is called inside another transactional method.
+    - Common values:
+      Here’s a clean and properly formatted table for Spring's `@Transactional` **Propagation Types** and their behavior:
+
+---
+
+### 🧾 Spring Transaction Propagation Types
+
+| Propagation Type | Behavior                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| `REQUIRED`       | Joins the existing transaction if one exists; otherwise, creates a new one. *(Default)* |
+| `REQUIRES_NEW`   | Suspends any existing transaction and starts a completely new one.                      |
+| `MANDATORY`      | Must be called within an existing transaction; throws an exception if none exists.      |
+| `SUPPORTS`       | Joins an existing transaction if one exists; otherwise, runs non-transactionally.       |
+| `NOT_SUPPORTED`  | Suspends any existing transaction and runs non-transactionally.                         |
+| `NEVER`          | Must be called **outside** of a transaction; throws an exception if one exists.         |
+| `NESTED`         | Executes within a nested transaction if a current transaction exists.                   |
+
+---
+
+- **Read-Only Transactions**:
+    ```java
+    @Transactional(readOnly = true)
+    ```
+    - Optimizes performance for read operations (hints to the persistence provider).
+
+---
+
+### ✅ Example: Using `@Transactional` in a Test Method
+```java
+@Test
+@Transactional
+public void printTeachers() {
+    List<Teacher> teachers = teacherRepository.findAll();
+    System.out.println("Teachers: " + teachers);
+}
+```
+
+### 1️⃣ `@Test`
+- Marks this method as a **JUnit test case**.
+- The test runner (JUnit) will execute it automatically.
+
+### 2️⃣ `@Transactional` in a Test Context
+- In **Spring Boot tests**, `@Transactional` means:
+    - The test method runs inside a **transaction**.
+    - **By default**, Spring **rolls back** the transaction after the test finishes — so any DB changes made during the test are **not persisted**.
+    - This keeps your test database clean and repeatable.
+
+---
+
+## **Why It’s Useful in Tests**
+- **Isolation**: Each test starts with a clean state.
+- **No manual cleanup**: You don’t have to delete inserted test data.
+- **Consistency**: Ensures all repository calls in the method share the same persistence context.
+
+---
+
+## **Important Notes**
+- If you **only read data** (like in your example), `@Transactional` isn’t strictly required — but it can still be useful if:
+    - You want to lazily load related entities without hitting `LazyInitializationException`.
+    - You want to ensure the same persistence context is used for the whole method.
+- If you **modify data** in a test and want to keep it, you’d need to disable rollback:
+  ```java
+  @Test
+  @Transactional
+  @Rollback(false)
+  public void saveTeacher() { ... }
+  ```
+
+---
+
+## **Best Practice Tip for Your Case**
+Since `teacherRepository.findAll()` might return entities with **lazy-loaded relationships** (e.g., `@OneToMany`), having `@Transactional` ensures:
+- The Hibernate session stays open while printing.
+- Lazy fields can be accessed without exceptions.
+
+---
