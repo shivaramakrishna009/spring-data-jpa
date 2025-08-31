@@ -642,5 +642,140 @@ private Session session;
 
 ---
 
+## **32. Fetch Types in JPA**
 
+### 🔍 What is Fetching?
+Fetching defines **how and when** related entities are loaded from the database — either **eagerly** (immediately) or **lazily** (on demand).
 
+---
+
+### ⚙️ FetchType Enum
+
+```java
+public enum FetchType {
+    LAZY,
+    EAGER
+}
+```
+
+---
+
+### 🧠 Types Explained
+
+| **Fetch Type** | **Behavior** | **Use Case** |
+|----------------|--------------|--------------|
+| `LAZY`         | Loads the related entity **only when accessed**. | Best for large or optional relationships. |
+| `EAGER`        | Loads the related entity **immediately** with the parent. | Use when the child is always needed. |
+
+---
+
+### 📌 Default Fetch Types by Relationship
+
+| **Annotation**     | **Default Fetch Type** |
+|--------------------|------------------------|
+| `@OneToOne`        | `EAGER`                |
+| `@ManyToOne`       | `EAGER`                |
+| `@OneToMany`       | `LAZY`                 |
+| `@ManyToMany`      | `LAZY`                 |
+
+---
+
+### ✅ Example: Lazy vs Eager
+
+#### Lazy
+```java
+@OneToMany(fetch = FetchType.LAZY)
+private List<Order> orders;
+```
+> Orders are fetched **only when accessed**.
+
+#### Eager
+```java
+@ManyToOne(fetch = FetchType.EAGER)
+private Customer customer;
+```
+> Customer is fetched **immediately** with the parent entity.
+
+---
+
+### ⚠️ Best Practices
+- Prefer `LAZY` for collections to avoid performance bottlenecks.
+- Use `EAGER` only when you're sure the related entity is **always needed**.
+- Be cautious with `EAGER` in large object graphs — it can lead to **N+1 query problems** or **heavy joins**.
+
+---
+
+## **33. @ToString in Lombok**
+
+### 🔧 Purpose
+Generates a `toString()` method automatically for the class, including selected fields. Helps with logging, debugging, and printing object state.
+
+---
+
+### ✅ Basic Usage
+```java
+@ToString
+public class CourseMaterial {
+    private String url;
+    private Course course;
+}
+```
+> Generates: `CourseMaterial(url=springboot.com, course=Course(...))`
+
+---
+
+### 🚫 Excluding Fields
+```java
+@ToString(exclude = "course")
+public class CourseMaterial {
+    private String url;
+    private Course course;
+}
+```
+> Output: `CourseMaterial(url=springboot.com)`  
+> Prevents **infinite recursion** in bidirectional relationships like `Course ↔ CourseMaterial`.
+
+---
+
+### 🧠 Why Exclude?
+- Avoids **stack overflow** in circular references.
+- Keeps `toString()` concise and readable.
+- Prevents sensitive or verbose fields from being printed.
+
+---
+
+### 🧩 Other Options
+
+| **Attribute**      | **Description** |
+|--------------------|------------------|
+| `exclude`          | Excludes specific fields from `toString()` |
+| `callSuper = true` | Includes superclass fields in `toString()` |
+| `onlyExplicitlyIncluded = true` | Includes only fields marked with `@ToString.Include` |
+
+---
+
+### ✨ Advanced Example
+```java
+@ToString(onlyExplicitlyIncluded = true)
+public class Student {
+
+    @ToString.Include
+    private String name;
+
+    @ToString.Include(name = "roll")
+    private int rollNumber;
+
+    @ToString.Exclude
+    private List<Course> courses;
+}
+```
+> Output: `Student(name=John, roll=101)`
+
+---
+
+### ⚠️ Best Practices
+- Always exclude fields in **bidirectional relationships**.
+- Use `onlyExplicitlyIncluded` for full control.
+- Avoid printing large collections or sensitive data.
+
+---

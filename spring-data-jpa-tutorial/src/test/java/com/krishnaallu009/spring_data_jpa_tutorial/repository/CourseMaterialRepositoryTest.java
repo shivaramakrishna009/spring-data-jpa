@@ -2,6 +2,7 @@ package com.krishnaallu009.spring_data_jpa_tutorial.repository;
 
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.Course;
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.CourseMaterial;
+import lombok.ToString;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,6 +26,11 @@ class CourseMaterialRepositoryTest {
                 .build();
 
         courseMaterialRepository.save(courseMaterial);
+    }
+
+    @Test
+    public void printAllCourseMaterials(){
+        System.out.println("Course Materials: " + courseMaterialRepository.findAll());
     }
 
 }
