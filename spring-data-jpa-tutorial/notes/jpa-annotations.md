@@ -1,9 +1,3 @@
-Got it, Siva ✅  
-From now on, every time we come across a **new annotation** in your Spring Boot + JPA journey, I’ll give you a **ready-to-paste `.md` section** so your file grows into a **personal annotation handbook**.
-
-Let’s start by adding **everything we’ve already covered** so your `.md` file is up to date from day one.
-
----
 
 # **Spring Boot + JPA Annotation Handbook**
 
@@ -162,10 +156,6 @@ void saveStudentTest() { ... }
 
 💡 **Pro Tip:**  
 For repository tests, you can also use `@DataJpaTest` instead of `@SpringBootTest` — it loads only JPA-related components and uses an in-memory database by default, making tests faster.
-
----
-
-Absolutely, Siva — this is a great move toward clean, modular entity design. Here's your **ready-to-paste `.md` note section** for the `Guardian` class and all the annotations you've used:
 
 ---
 
@@ -442,5 +432,710 @@ int updateStudentNameByEmailId(@Param("name") String firstName, String emailId);
 - Always test update queries — they bypass entity lifecycle callbacks.
 
 ---
+# **Spring Data JPA – Entity Relationships**
 
+## **26. @OneToOne**
+```java
+@OneToOne
+private Course course;
+```
+- **Purpose:** Defines a **one-to-one relationship** between two entities.
+- **Effect:** Each `CourseMaterial` is linked to exactly one `Course`, and vice versa (unless mapped differently on the other side).
+- **Defaults:**
+    - Fetch type = `EAGER` (loads related entity immediately).
+    - Cascade = none (changes don’t propagate unless specified).
+- **Best Practice:**
+    - Often set `fetch = FetchType.LAZY` to avoid unnecessary loading.
+    - Use `cascade = CascadeType.ALL` if you want related entity changes to persist automatically.
 
+---
+
+## **27. @JoinColumn**
+```java
+@JoinColumn(
+    name = "course_id",
+    referencedColumnName = "courseId"
+)
+```
+- **Purpose:** Specifies the **foreign key column** in the owning entity’s table.
+- **Parameters:**
+    - `name`: Column name in `course_material` table that stores the FK.
+    - `referencedColumnName`: Column in the target entity (`Course`) that this FK points to.
+- **Notes:**
+    - If omitted, defaults to `<fieldName>_<referencedColumnName>`.
+    - This annotation is placed on the **owning side** of the relationship.
+
+---
+
+💡 **Example Table Structure**
+- **course_material**
+    - `course_material_id` (PK)
+    - `url`
+    - `course_id` (FK → `course.course_id`)
+
+---
+
+## **28. Relationship Ownership**
+- In a `@OneToOne` mapping:
+    - The side with `@JoinColumn` is the **owning side** (controls the FK column).
+    - The other side (if bidirectional) uses `mappedBy` to indicate it’s the inverse side.
+
+---
+
+✅ **Pro Tip:**  
+If you make this relationship **bidirectional**, in `Course` you’d have:
+```java
+@OneToOne(mappedBy = "course")
+private CourseMaterial courseMaterial;
+```
+This avoids creating two foreign keys and keeps the mapping clean.
+
+---
+# **29. Inverse Side of One-to-One Relationship**
+
+```java
+@OneToOne(mappedBy = "course")
+private CourseMaterial courseMaterial;
+```
+- **Purpose:** Marks this side of the relationship as the **inverse (non-owning) side** in a one-to-one mapping.
+- **`mappedBy` parameter:**
+    - Refers to the field name in the owning entity (`CourseMaterial.course`) that controls the relationship and foreign key.
+- **Effect:**
+    - No separate foreign key column is created in the `course` table.
+    - JPA uses the mapping defined in the owning side (`CourseMaterial`) to join the entities.
+- **Best Practice:**
+    - Always ensure `mappedBy` matches the exact field name in the owning entity.
+    - Use this when you want bidirectional navigation without duplicate foreign keys.
+
+---
+### ✅ Example: Bidirectional Mapping
+**CourseMaterial.java**
+```java
+@OneToOne
+@JoinColumn(name = "course_id", referencedColumnName = "courseId")
+private Course course;
+```
+
+**Course.java**
+```java
+@OneToOne(mappedBy = "course")
+private CourseMaterial courseMaterial;
+```
+
+---
+
+## Quick Recap — One-to-One Ownership Rules
+
+| **Side**        | **Annotation Example**                                      | **Controls FK?** | **Table Containing FK**      | **Notes** |
+|-----------------|--------------------------------------------------------------|------------------|------------------------------|-----------|
+| **Owning Side** | `@OneToOne @JoinColumn(name = "course_id", referencedColumnName = "courseId")` | ✅ Yes           | Owning entity’s table        | Has the `@JoinColumn` annotation; defines and manages the foreign key column. |
+| **Inverse Side**| `@OneToOne(mappedBy = "course")`                              | ❌ No            | Uses FK from owning side     | Refers to the field name in the owning entity; no extra FK column is created. |
+
+---
+# **Cascade Types in JPA**
+
+## **30. @OneToOne with Cascade**
+
+### Annotation
+```java
+@OneToOne(cascade = CascadeType.ALL)
+private Course course;
+```
+
+### **Purpose**
+- Enables **automatic propagation** of operations (like `save`, `delete`) from the **owning entity** to the **associated entity**.
+- In this case, when you persist or delete a `CourseMaterial`, the associated `Course` is also persisted or deleted.
+
+---
+
+### **CascadeType Options**
+
+| **Cascade Type**     | **Effect**                                                                 |
+|----------------------|----------------------------------------------------------------------------|
+| `ALL`                | Applies all cascade operations listed below.                              |
+| `PERSIST`            | Saves the associated entity when the parent is saved.                     |
+| `MERGE`              | Merges changes from the associated entity when the parent is merged.      |
+| `REMOVE`             | Deletes the associated entity when the parent is deleted.                 |
+| `REFRESH`            | Refreshes the associated entity when the parent is refreshed.             |
+| `DETACH`             | Detaches the associated entity when the parent is detached from the context. |
+
+---
+
+### ✅ Example
+```java
+Course course = Course.builder()
+    .title("Spring Boot")
+    .credit(6)
+    .build();
+
+CourseMaterial material = CourseMaterial.builder()
+    .url("springboot.com")
+    .course(course)
+    .build();
+
+courseMaterialRepository.save(material); // Automatically saves both CourseMaterial and Course
+```
+
+---
+
+### 💡 Best Practices
+- Use `CascadeType.ALL` only when the lifecycle of the child entity is **fully dependent** on the parent.
+- For shared entities (like `Course` used in multiple places), avoid cascading `REMOVE` to prevent accidental deletions.
+
+---
+
+## **31. CascadeType Explained**
+
+### ✅ Overview
+Cascade defines how operations on the **parent entity** affect the **associated child entity**. You can fine-tune behavior by choosing specific cascade types instead of using `ALL`.
+
+---
+
+### 🔍 Individual Cascade Types
+
+| **Cascade Type** | **Description** | **When to Use** |
+|------------------|------------------|------------------|
+| `PERSIST`        | Saves the child when the parent is saved. | When child entities are new and should be saved with the parent. |
+| `MERGE`          | Updates the child when the parent is merged. | Useful in detached entity scenarios (e.g., DTO → Entity conversion). |
+| `REMOVE`         | Deletes the child when the parent is deleted. | Only if the child shouldn't exist independently. |
+| `REFRESH`        | Reloads the child from the database when the parent is refreshed. | When you want both entities to reflect the latest DB state. |
+| `DETACH`         | Detaches the child when the parent is detached from the persistence context. | Rarely used directly; useful in advanced session management. |
+
+---
+
+### 🧠 Practical Examples
+
+#### 1. `CascadeType.PERSIST`
+```java
+@OneToOne(cascade = CascadeType.PERSIST)
+private Profile profile;
+```
+> Saving `User` will also save `Profile`, but deleting `User` won’t delete `Profile`.
+
+---
+
+#### 2. `CascadeType.MERGE`
+```java
+@OneToOne(cascade = CascadeType.MERGE)
+private Address address;
+```
+> When updating a detached `Customer`, changes in `Address` will be merged too.
+
+---
+
+#### 3. `CascadeType.REMOVE`
+```java
+@OneToOne(cascade = CascadeType.REMOVE)
+private Avatar avatar;
+```
+> Deleting `User` will also delete the associated `Avatar`.
+
+---
+
+#### 4. `CascadeType.REFRESH`
+```java
+@OneToOne(cascade = CascadeType.REFRESH)
+private Settings settings;
+```
+> Refreshing `AppConfig` will also reload `Settings` from DB.
+
+---
+
+#### 5. `CascadeType.DETACH`
+```java
+@OneToOne(cascade = CascadeType.DETACH)
+private Session session;
+```
+> Detaching `User` from persistence context will also detach `Session`.
+
+---
+
+### ⚠️ Best Practice Tips
+- Prefer **explicit cascade types** over `ALL` unless you're sure the child entity is tightly coupled.
+- Avoid `REMOVE` if the child is reused elsewhere — it can lead to unintended deletions.
+- Use `MERGE` and `PERSIST` in DTO-to-Entity conversion flows.
+
+---
+
+## **32. Fetch Types in JPA**
+
+### 🔍 What is Fetching?
+Fetching defines **how and when** related entities are loaded from the database — either **eagerly** (immediately) or **lazily** (on demand).
+
+---
+
+### ⚙️ FetchType Enum
+
+```java
+public enum FetchType {
+    LAZY,
+    EAGER
+}
+```
+
+---
+
+### 🧠 Types Explained
+
+| **Fetch Type** | **Behavior** | **Use Case** |
+|----------------|--------------|--------------|
+| `LAZY`         | Loads the related entity **only when accessed**. | Best for large or optional relationships. |
+| `EAGER`        | Loads the related entity **immediately** with the parent. | Use when the child is always needed. |
+
+---
+
+### 📌 Default Fetch Types by Relationship
+
+| **Annotation**     | **Default Fetch Type** |
+|--------------------|------------------------|
+| `@OneToOne`        | `EAGER`                |
+| `@ManyToOne`       | `EAGER`                |
+| `@OneToMany`       | `LAZY`                 |
+| `@ManyToMany`      | `LAZY`                 |
+
+---
+
+### ✅ Example: Lazy vs Eager
+
+#### Lazy
+```java
+@OneToMany(fetch = FetchType.LAZY)
+private List<Order> orders;
+```
+> Orders are fetched **only when accessed**.
+
+#### Eager
+```java
+@ManyToOne(fetch = FetchType.EAGER)
+private Customer customer;
+```
+> Customer is fetched **immediately** with the parent entity.
+
+---
+
+### ⚠️ Best Practices
+- Prefer `LAZY` for collections to avoid performance bottlenecks.
+- Use `EAGER` only when you're sure the related entity is **always needed**.
+- Be cautious with `EAGER` in large object graphs — it can lead to **N+1 query problems** or **heavy joins**.
+
+---
+
+## **33. @ToString in Lombok**
+
+### 🔧 Purpose
+Generates a `toString()` method automatically for the class, including selected fields. Helps with logging, debugging, and printing object state.
+
+---
+
+### ✅ Basic Usage
+```java
+@ToString
+public class CourseMaterial {
+    private String url;
+    private Course course;
+}
+```
+> Generates: `CourseMaterial(url=springboot.com, course=Course(...))`
+
+---
+
+### 🚫 Excluding Fields
+```java
+@ToString(exclude = "course")
+public class CourseMaterial {
+    private String url;
+    private Course course;
+}
+```
+> Output: `CourseMaterial(url=springboot.com)`  
+> Prevents **infinite recursion** in bidirectional relationships like `Course ↔ CourseMaterial`.
+
+---
+
+### 🧠 Why Exclude?
+- Avoids **stack overflow** in circular references.
+- Keeps `toString()` concise and readable.
+- Prevents sensitive or verbose fields from being printed.
+
+---
+
+### 🧩 Other Options
+
+| **Attribute**      | **Description** |
+|--------------------|------------------|
+| `exclude`          | Excludes specific fields from `toString()` |
+| `callSuper = true` | Includes superclass fields in `toString()` |
+| `onlyExplicitlyIncluded = true` | Includes only fields marked with `@ToString.Include` |
+
+---
+
+### ✨ Advanced Example
+```java
+@ToString(onlyExplicitlyIncluded = true)
+public class Student {
+
+    @ToString.Include
+    private String name;
+
+    @ToString.Include(name = "roll")
+    private int rollNumber;
+
+    @ToString.Exclude
+    private List<Course> courses;
+}
+```
+> Output: `Student(name=John, roll=101)`
+
+---
+
+### ⚠️ Best Practices
+- Always exclude fields in **bidirectional relationships**.
+- Use `onlyExplicitlyIncluded` for full control.
+- Avoid printing large collections or sensitive data.
+
+---
+
+## **36. @OneToMany with @JoinColumn**
+
+### ✅ Purpose
+- Models a **one-to-many** relationship where **this entity is the owning side**.
+- `@JoinColumn` specifies the foreign key column in the **child table** that points back to this entity.
+- Avoids creating a join table (default for `@OneToMany` without `@JoinColumn`).
+
+---
+
+### 📌 Syntax
+```java
+@OneToMany(
+    cascade = CascadeType.ALL,
+    fetch = FetchType.LAZY
+)
+@JoinColumn(
+    name = "teacher_id",              // FK column in child table
+    referencedColumnName = "teacherId" // PK column in parent table
+)
+private List<Course> courses;
+```
+
+---
+
+### 🧠 Parameter Breakdown
+
+| Annotation / Param | Meaning |
+|--------------------|---------|
+| `@OneToMany`       | Declares a one-to-many relationship. |
+| `cascade = CascadeType.ALL` | All entity operations (persist, merge, remove, refresh, detach) are cascaded to children. |
+| `fetch = FetchType.LAZY` | Child entities are loaded **on demand** (recommended for large collections). |
+| `@JoinColumn`      | Specifies the FK column in the child table. |
+| `name`             | Name of the FK column in the child table. |
+| `referencedColumnName` | Column in the parent table that the FK references. |
+
+---
+
+### ⚠️ Best Practices
+- **Prefer `LAZY`** for collections to avoid N+1 query issues.
+- Use `CascadeType.ALL` only if child lifecycle is fully dependent on the parent.
+- Keep `mappedBy` **absent** here — since this is the owning side, `@JoinColumn` is enough.
+- Ensure the FK column (`teacher_id`) exists in the child table schema.
+
+---
+
+### ✅ Example: Teacher → Courses
+**Teacher.java**
+```java
+@OneToMany(
+    cascade = CascadeType.ALL,
+    fetch = FetchType.LAZY
+)
+@JoinColumn(name = "teacher_id", referencedColumnName = "teacherId")
+private List<Course> courses;
+```
+
+**Course.java**
+```java
+@Entity
+public class Course {
+    @Id
+    private Long courseId;
+    private String title;
+}
+```
+
+**Generated Schema (simplified)**
+```
+COURSE
+---------
+course_id   PK
+title
+teacher_id  FK → TEACHER.teacherId
+```
+
+---
+
+## **37. @Transactional**
+
+### ✅ Purpose
+- Marks a method or class to be executed **within a database transaction**.
+- Ensures **atomicity** — all operations inside either **complete successfully** or **roll back** on failure.
+
+---
+
+### 📌 Syntax
+```java
+@Transactional
+public void updateStudentData() {
+    // DB operations here
+}
+```
+
+---
+
+### 🧠 Key Points
+- **Scope**:
+    - At **method level** → applies to that method only.
+    - At **class level** → applies to all public methods in the class.
+- **Rollback Behavior**:
+    - By default, rolls back on **unchecked exceptions** (`RuntimeException`, `Error`).
+    - Can be configured to roll back on checked exceptions too:
+      ```java
+      @Transactional(rollbackFor = Exception.class)
+      ```
+- **Propagation**:
+    - Defines how transactions behave when a method is called inside another transactional method.
+    - Common values:
+      Here’s a clean and properly formatted table for Spring's `@Transactional` **Propagation Types** and their behavior:
+
+---
+
+### 🧾 Spring Transaction Propagation Types
+
+| Propagation Type | Behavior                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| `REQUIRED`       | Joins the existing transaction if one exists; otherwise, creates a new one. *(Default)* |
+| `REQUIRES_NEW`   | Suspends any existing transaction and starts a completely new one.                      |
+| `MANDATORY`      | Must be called within an existing transaction; throws an exception if none exists.      |
+| `SUPPORTS`       | Joins an existing transaction if one exists; otherwise, runs non-transactionally.       |
+| `NOT_SUPPORTED`  | Suspends any existing transaction and runs non-transactionally.                         |
+| `NEVER`          | Must be called **outside** of a transaction; throws an exception if one exists.         |
+| `NESTED`         | Executes within a nested transaction if a current transaction exists.                   |
+
+---
+
+- **Read-Only Transactions**:
+    ```java
+    @Transactional(readOnly = true)
+    ```
+    - Optimizes performance for read operations (hints to the persistence provider).
+
+---
+
+### ✅ Example: Using `@Transactional` in a Test Method
+```java
+@Test
+@Transactional
+public void printTeachers() {
+    List<Teacher> teachers = teacherRepository.findAll();
+    System.out.println("Teachers: " + teachers);
+}
+```
+
+### 1️⃣ `@Test`
+- Marks this method as a **JUnit test case**.
+- The test runner (JUnit) will execute it automatically.
+
+### 2️⃣ `@Transactional` in a Test Context
+- In **Spring Boot tests**, `@Transactional` means:
+    - The test method runs inside a **transaction**.
+    - **By default**, Spring **rolls back** the transaction after the test finishes — so any DB changes made during the test are **not persisted**.
+    - This keeps your test database clean and repeatable.
+
+---
+
+## **Why It’s Useful in Tests**
+- **Isolation**: Each test starts with a clean state.
+- **No manual cleanup**: You don’t have to delete inserted test data.
+- **Consistency**: Ensures all repository calls in the method share the same persistence context.
+
+---
+
+## **Important Notes**
+- If you **only read data** (like in your example), `@Transactional` isn’t strictly required — but it can still be useful if:
+    - You want to lazily load related entities without hitting `LazyInitializationException`.
+    - You want to ensure the same persistence context is used for the whole method.
+- If you **modify data** in a test and want to keep it, you’d need to disable rollback:
+  ```java
+  @Test
+  @Transactional
+  @Rollback(false)
+  public void saveTeacher() { ... }
+  ```
+
+---
+
+## **Best Practice Tip for Your Case**
+Since `teacherRepository.findAll()` might return entities with **lazy-loaded relationships** (e.g., `@OneToMany`), having `@Transactional` ensures:
+- The Hibernate session stays open while printing.
+- Lazy fields can be accessed without exceptions.
+
+---
+
+## **38. Pagination in Spring Data JPA**
+
+### ✅ Purpose
+- Breaks large result sets into **smaller, manageable chunks**.
+- Improves performance by **loading only what you need**.
+- Works seamlessly with `JpaRepository` via `Pageable` and `Page` interfaces.
+
+---
+
+### 📌 Key Interfaces & Classes
+| **Type** | **Purpose** |
+|----------|-------------|
+| `Pageable` | Encapsulates pagination info (page number, size, sort). |
+| `PageRequest` | Implementation of `Pageable` — used to create pagination requests. |
+| `Page<T>` | Represents a single page of results, plus metadata (total pages, total elements, etc.). |
+| `Slice<T>` | Similar to `Page` but without total count (faster for large datasets). |
+
+---
+
+### 🧠 Basic Usage
+
+#### Repository Method
+```java
+public interface StudentRepository extends JpaRepository<Student, Long> {
+    Page<Student> findByFirstName(String firstName, Pageable pageable);
+}
+```
+
+#### Service / Test Example
+```java
+Pageable pageable = PageRequest.of(0, 5, Sort.by("firstName").ascending());
+Page<Student> pageResult = studentRepository.findByFirstName("Siva", pageable);
+
+List<Student> students = pageResult.getContent();
+int totalPages = pageResult.getTotalPages();
+long totalElements = pageResult.getTotalElements();
+```
+
+---
+
+### ⚙️ `PageRequest.of(page, size, sort...)`
+- **page** → Zero-based page index (0 = first page).
+- **size** → Number of records per page.
+- **sort** → Optional sorting criteria.
+
+Example:
+```java
+PageRequest.of(1, 10, Sort.by("lastName").descending());
+```
+> Fetches the **second page** (index 1) with 10 records, sorted by `lastName` descending.
+
+---
+
+### 📊 Page vs Slice
+| Feature | `Page` | `Slice` |
+|---------|--------|---------|
+| Total count query | ✅ Yes | ❌ No |
+| Metadata (total pages, elements) | ✅ Yes | ❌ No |
+| Performance | Slower for huge datasets | Faster for streaming-like scenarios |
+
+---
+
+### ⚠️ Best Practices
+- Use **`Page`** when you need total counts (e.g., UI pagination controls).
+- Use **`Slice`** for infinite scrolling or "Load More" buttons.
+- Always **sort** results for consistent paging.
+- Avoid large page sizes — they can still cause memory issues.
+
+---
+
+### 💡 Pro Tip
+You can combine pagination with **dynamic queries**:
+```java
+Page<Student> findByFirstNameContaining(String name, Pageable pageable);
+```
+> Supports both filtering and paging in one query.
+
+---
+
+## **39. @ManyToMany with @JoinTable**
+
+### ✅ Purpose
+- Models a **many-to-many** relationship between two entities.
+- Uses a **join table** to hold the foreign keys from both sides.
+- In this example:
+    - One `Course` can have many `Student`s.
+    - One `Student` can enroll in many `Course`s.
+
+---
+
+### 📌 Syntax
+```java
+@ManyToMany(cascade = CascadeType.ALL)
+@JoinTable(
+    name = "student_course_map",
+    joinColumns = @JoinColumn(
+        name = "course_id",              // FK column in join table pointing to this entity
+        referencedColumnName = "courseId" // PK column in this entity's table
+    ),
+    inverseJoinColumns = @JoinColumn(
+        name = "student_id",              // FK column in join table pointing to the other entity
+        referencedColumnName = "studentId" // PK column in the other entity's table
+    )
+)
+private List<Student> students;
+```
+
+---
+
+### 🧠 Parameter Breakdown
+
+#### `@ManyToMany`
+- **Purpose:** Defines a many-to-many association.
+- **Defaults:**
+    - Fetch type = `LAZY` (recommended for large collections).
+    - No cascade by default.
+- **Here:** `cascade = CascadeType.ALL` → All operations on `Course` will cascade to related `Student`s.
+
+#### `@JoinTable`
+- **Purpose:** Specifies the join table that maps the relationship.
+- **Parameters:**
+    - `name`: Name of the join table.
+    - `joinColumns`: FK column(s) referencing the **owning entity**.
+    - `inverseJoinColumns`: FK column(s) referencing the **other entity**.
+
+---
+
+### 📊 Resulting Table Structure
+
+**student_course_map**
+
+| course_id (FK → course.courseId) | student_id (FK → student.studentId) |
+|---------------------------------|--------------------------------------|
+| 1                                | 101                                  |
+| 1                                | 102                                  |
+| 2                                | 101                                  |
+
+---
+
+### ⚠️ Best Practices
+- Always decide **owning side** — the side with `@JoinTable` is the owning side.
+- Use `mappedBy` on the inverse side to avoid duplicate join tables.
+- Avoid `CascadeType.REMOVE` if the other entity is shared elsewhere.
+- Keep fetch type `LAZY` unless you always need the related data.
+
+---
+
+### ✅ Example: Inverse Side in `Student`
+```java
+@ManyToMany(mappedBy = "students")
+private List<Course> courses;
+```
+> This tells JPA that `Student` is the inverse side and uses the join table defined in `Course`.
+
+---
+
+💡 **Pro Tip:**  
+For large datasets, consider using `Set` instead of `List` to avoid duplicates and improve performance in many-to-many mappings.
+
+---
