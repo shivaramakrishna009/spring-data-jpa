@@ -1,9 +1,3 @@
-Got it, Siva ✅  
-From now on, every time we come across a **new annotation** in your Spring Boot + JPA journey, I’ll give you a **ready-to-paste `.md` section** so your file grows into a **personal annotation handbook**.
-
-Let’s start by adding **everything we’ve already covered** so your `.md` file is up to date from day one.
-
----
 
 # **Spring Boot + JPA Annotation Handbook**
 
@@ -162,10 +156,6 @@ void saveStudentTest() { ... }
 
 💡 **Pro Tip:**  
 For repository tests, you can also use `@DataJpaTest` instead of `@SpringBootTest` — it loads only JPA-related components and uses an in-memory database by default, making tests faster.
-
----
-
-Absolutely, Siva — this is a great move toward clean, modular entity design. Here's your **ready-to-paste `.md` note section** for the `Guardian` class and all the annotations you've used:
 
 ---
 
@@ -440,6 +430,91 @@ int updateStudentNameByEmailId(@Param("name") String firstName, String emailId);
 @Query("UPDATE Student s SET s.firstName = :name WHERE s.emailId = :emailId")
 ```
 - Always test update queries — they bypass entity lifecycle callbacks.
+
+---
+# **Spring Data JPA – Entity Relationships**
+
+## **26. @OneToOne**
+```java
+@OneToOne
+private Course course;
+```
+- **Purpose:** Defines a **one-to-one relationship** between two entities.
+- **Effect:** Each `CourseMaterial` is linked to exactly one `Course`, and vice versa (unless mapped differently on the other side).
+- **Defaults:**
+    - Fetch type = `EAGER` (loads related entity immediately).
+    - Cascade = none (changes don’t propagate unless specified).
+- **Best Practice:**
+    - Often set `fetch = FetchType.LAZY` to avoid unnecessary loading.
+    - Use `cascade = CascadeType.ALL` if you want related entity changes to persist automatically.
+
+---
+
+## **27. @JoinColumn**
+```java
+@JoinColumn(
+    name = "course_id",
+    referencedColumnName = "courseId"
+)
+```
+- **Purpose:** Specifies the **foreign key column** in the owning entity’s table.
+- **Parameters:**
+    - `name`: Column name in `course_material` table that stores the FK.
+    - `referencedColumnName`: Column in the target entity (`Course`) that this FK points to.
+- **Notes:**
+    - If omitted, defaults to `<fieldName>_<referencedColumnName>`.
+    - This annotation is placed on the **owning side** of the relationship.
+
+---
+
+💡 **Example Table Structure**
+- **course_material**
+    - `course_material_id` (PK)
+    - `url`
+    - `course_id` (FK → `course.course_id`)
+
+---
+
+## **28. Relationship Ownership**
+- In a `@OneToOne` mapping:
+    - The side with `@JoinColumn` is the **owning side** (controls the FK column).
+    - The other side (if bidirectional) uses `mappedBy` to indicate it’s the inverse side.
+
+---
+
+✅ **Pro Tip:**  
+If you make this relationship **bidirectional**, in `Course` you’d have:
+```java
+@OneToOne(mappedBy = "course")
+private CourseMaterial courseMaterial;
+```
+This avoids creating two foreign keys and keeps the mapping clean.
+
+---
+# **29. Inverse Side of One-to-One Relationship**
+
+```java
+@OneToOne(mappedBy = "course")
+private CourseMaterial courseMaterial;
+```
+- **Purpose:** Marks this side of the relationship as the **inverse (non-owning) side** in a one-to-one mapping.
+- **`mappedBy` parameter:**
+    - Refers to the field name in the owning entity (`CourseMaterial.course`) that controls the relationship and foreign key.
+- **Effect:**
+    - No separate foreign key column is created in the `course` table.
+    - JPA uses the mapping defined in the owning side (`CourseMaterial`) to join the entities.
+- **Best Practice:**
+    - Always ensure `mappedBy` matches the exact field name in the owning entity.
+    - Use this when you want bidirectional navigation without duplicate foreign keys.
+
+---
+
+## Quick Recap — One-to-One Ownership Rules
+
+| **Side**        | **Annotation Example**                                      | **Controls FK?** | **Table Containing FK**      | **Notes** |
+|-----------------|--------------------------------------------------------------|------------------|------------------------------|-----------|
+| **Owning Side** | `@OneToOne @JoinColumn(name = "course_id", referencedColumnName = "courseId")` | ✅ Yes           | Owning entity’s table        | Has the `@JoinColumn` annotation; defines and manages the foreign key column. |
+| **Inverse Side**| `@OneToOne(mappedBy = "course")`                              | ❌ No            | Uses FK from owning side     | Refers to the field name in the owning entity; no extra FK column is created. |
 
 ---
 
