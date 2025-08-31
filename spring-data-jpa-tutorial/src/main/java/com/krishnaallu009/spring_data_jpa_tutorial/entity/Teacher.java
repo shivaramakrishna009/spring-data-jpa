@@ -24,4 +24,10 @@ public class Teacher {
     private long teacherId;
     private String firstName;
     private String lastName;
+
+    @OneToMany(
+            cascade = CascadeType.ALL,
+            mappedBy = "teacher"
+    )
+    private List<Course> courses;
 }

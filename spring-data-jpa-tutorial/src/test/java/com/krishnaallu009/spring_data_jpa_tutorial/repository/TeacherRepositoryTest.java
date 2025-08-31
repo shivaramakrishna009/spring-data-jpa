@@ -2,6 +2,7 @@ package com.krishnaallu009.spring_data_jpa_tutorial.repository;
 
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.Course;
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.Teacher;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,6 +42,7 @@ class TeacherRepositoryTest {
     }
 
     @Test
+    @Transactional
     public void printTeachers(){
         List<Teacher> teachers = teacherRepository.findAll();
         System.out.println("Teachers: " + teachers);
