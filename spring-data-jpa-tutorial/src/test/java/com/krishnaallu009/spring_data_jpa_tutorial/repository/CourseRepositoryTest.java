@@ -1,6 +1,7 @@
 package com.krishnaallu009.spring_data_jpa_tutorial.repository;
 
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.Course;
+import com.krishnaallu009.spring_data_jpa_tutorial.entity.Student;
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.Teacher;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,9 +42,9 @@ class CourseRepositoryTest {
     }
 
     @Test
-    public void findAllPagination(){
-        PageRequest firstPageWithThreeRecords = PageRequest.of(0,3);
-        PageRequest secondPageWithTwoRecords = PageRequest.of(1,2);
+    public void findAllPagination() {
+        PageRequest firstPageWithThreeRecords = PageRequest.of(0, 3);
+        PageRequest secondPageWithTwoRecords = PageRequest.of(1, 2);
 
         List<Course> courses = courseRepository.findAll(firstPageWithThreeRecords).getContent();
 
@@ -75,9 +76,33 @@ class CourseRepositoryTest {
     }
 
     @Test
-    public void printFindByTitleContaining(){
+    public void printFindByTitleContaining() {
         PageRequest firstPageTenRecords = PageRequest.of(0, 10);
         List<Course> courses = courseRepository.findByTitleContaining("D", firstPageTenRecords).getContent();
         System.out.println("courses: " + courses);
+    }
+
+    @Test
+    public void saveCourseWithStudentAndTeacher() {
+        Teacher teacher = Teacher.builder()
+                .firstName("Lakshmi")
+                .lastName("K")
+                .build();
+
+        Student student = Student.builder()
+                .firstName("Ram")
+                .lastName("B")
+                .emailId("ram@gmail.com")
+                .build();
+
+        Course course = Course.builder()
+                .title("Data Science")
+                .credit(12)
+                .teacher(teacher)
+                .build();
+
+        course.addStudent(student);
+
+        courseRepository.save(course);
     }
 }

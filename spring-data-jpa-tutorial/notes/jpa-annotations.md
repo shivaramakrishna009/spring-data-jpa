@@ -1057,3 +1057,85 @@ Page<Student> findByFirstNameContaining(String name, Pageable pageable);
 > Supports both filtering and paging in one query.
 
 ---
+
+## **39. @ManyToMany with @JoinTable**
+
+### ✅ Purpose
+- Models a **many-to-many** relationship between two entities.
+- Uses a **join table** to hold the foreign keys from both sides.
+- In this example:
+    - One `Course` can have many `Student`s.
+    - One `Student` can enroll in many `Course`s.
+
+---
+
+### 📌 Syntax
+```java
+@ManyToMany(cascade = CascadeType.ALL)
+@JoinTable(
+    name = "student_course_map",
+    joinColumns = @JoinColumn(
+        name = "course_id",              // FK column in join table pointing to this entity
+        referencedColumnName = "courseId" // PK column in this entity's table
+    ),
+    inverseJoinColumns = @JoinColumn(
+        name = "student_id",              // FK column in join table pointing to the other entity
+        referencedColumnName = "studentId" // PK column in the other entity's table
+    )
+)
+private List<Student> students;
+```
+
+---
+
+### 🧠 Parameter Breakdown
+
+#### `@ManyToMany`
+- **Purpose:** Defines a many-to-many association.
+- **Defaults:**
+    - Fetch type = `LAZY` (recommended for large collections).
+    - No cascade by default.
+- **Here:** `cascade = CascadeType.ALL` → All operations on `Course` will cascade to related `Student`s.
+
+#### `@JoinTable`
+- **Purpose:** Specifies the join table that maps the relationship.
+- **Parameters:**
+    - `name`: Name of the join table.
+    - `joinColumns`: FK column(s) referencing the **owning entity**.
+    - `inverseJoinColumns`: FK column(s) referencing the **other entity**.
+
+---
+
+### 📊 Resulting Table Structure
+
+**student_course_map**
+
+| course_id (FK → course.courseId) | student_id (FK → student.studentId) |
+|---------------------------------|--------------------------------------|
+| 1                                | 101                                  |
+| 1                                | 102                                  |
+| 2                                | 101                                  |
+
+---
+
+### ⚠️ Best Practices
+- Always decide **owning side** — the side with `@JoinTable` is the owning side.
+- Use `mappedBy` on the inverse side to avoid duplicate join tables.
+- Avoid `CascadeType.REMOVE` if the other entity is shared elsewhere.
+- Keep fetch type `LAZY` unless you always need the related data.
+
+---
+
+### ✅ Example: Inverse Side in `Student`
+```java
+@ManyToMany(mappedBy = "students")
+private List<Course> courses;
+```
+> This tells JPA that `Student` is the inverse side and uses the join table defined in `Course`.
+
+---
+
+💡 **Pro Tip:**  
+For large datasets, consider using `Set` instead of `List` to avoid duplicates and improve performance in many-to-many mappings.
+
+---
