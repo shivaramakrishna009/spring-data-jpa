@@ -508,6 +508,21 @@ private CourseMaterial courseMaterial;
     - Use this when you want bidirectional navigation without duplicate foreign keys.
 
 ---
+### ✅ Example: Bidirectional Mapping
+**CourseMaterial.java**
+```java
+@OneToOne
+@JoinColumn(name = "course_id", referencedColumnName = "courseId")
+private Course course;
+```
+
+**Course.java**
+```java
+@OneToOne(mappedBy = "course")
+private CourseMaterial courseMaterial;
+```
+
+---
 
 ## Quick Recap — One-to-One Ownership Rules
 
