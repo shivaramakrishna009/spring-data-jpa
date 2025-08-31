@@ -871,3 +871,189 @@ teacher_id  FK → TEACHER.teacherId
 ```
 
 ---
+
+## **37. @Transactional**
+
+### ✅ Purpose
+- Marks a method or class to be executed **within a database transaction**.
+- Ensures **atomicity** — all operations inside either **complete successfully** or **roll back** on failure.
+
+---
+
+### 📌 Syntax
+```java
+@Transactional
+public void updateStudentData() {
+    // DB operations here
+}
+```
+
+---
+
+### 🧠 Key Points
+- **Scope**:
+    - At **method level** → applies to that method only.
+    - At **class level** → applies to all public methods in the class.
+- **Rollback Behavior**:
+    - By default, rolls back on **unchecked exceptions** (`RuntimeException`, `Error`).
+    - Can be configured to roll back on checked exceptions too:
+      ```java
+      @Transactional(rollbackFor = Exception.class)
+      ```
+- **Propagation**:
+    - Defines how transactions behave when a method is called inside another transactional method.
+    - Common values:
+      Here’s a clean and properly formatted table for Spring's `@Transactional` **Propagation Types** and their behavior:
+
+---
+
+### 🧾 Spring Transaction Propagation Types
+
+| Propagation Type | Behavior                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| `REQUIRED`       | Joins the existing transaction if one exists; otherwise, creates a new one. *(Default)* |
+| `REQUIRES_NEW`   | Suspends any existing transaction and starts a completely new one.                      |
+| `MANDATORY`      | Must be called within an existing transaction; throws an exception if none exists.      |
+| `SUPPORTS`       | Joins an existing transaction if one exists; otherwise, runs non-transactionally.       |
+| `NOT_SUPPORTED`  | Suspends any existing transaction and runs non-transactionally.                         |
+| `NEVER`          | Must be called **outside** of a transaction; throws an exception if one exists.         |
+| `NESTED`         | Executes within a nested transaction if a current transaction exists.                   |
+
+---
+
+- **Read-Only Transactions**:
+    ```java
+    @Transactional(readOnly = true)
+    ```
+    - Optimizes performance for read operations (hints to the persistence provider).
+
+---
+
+### ✅ Example: Using `@Transactional` in a Test Method
+```java
+@Test
+@Transactional
+public void printTeachers() {
+    List<Teacher> teachers = teacherRepository.findAll();
+    System.out.println("Teachers: " + teachers);
+}
+```
+
+### 1️⃣ `@Test`
+- Marks this method as a **JUnit test case**.
+- The test runner (JUnit) will execute it automatically.
+
+### 2️⃣ `@Transactional` in a Test Context
+- In **Spring Boot tests**, `@Transactional` means:
+    - The test method runs inside a **transaction**.
+    - **By default**, Spring **rolls back** the transaction after the test finishes — so any DB changes made during the test are **not persisted**.
+    - This keeps your test database clean and repeatable.
+
+---
+
+## **Why It’s Useful in Tests**
+- **Isolation**: Each test starts with a clean state.
+- **No manual cleanup**: You don’t have to delete inserted test data.
+- **Consistency**: Ensures all repository calls in the method share the same persistence context.
+
+---
+
+## **Important Notes**
+- If you **only read data** (like in your example), `@Transactional` isn’t strictly required — but it can still be useful if:
+    - You want to lazily load related entities without hitting `LazyInitializationException`.
+    - You want to ensure the same persistence context is used for the whole method.
+- If you **modify data** in a test and want to keep it, you’d need to disable rollback:
+  ```java
+  @Test
+  @Transactional
+  @Rollback(false)
+  public void saveTeacher() { ... }
+  ```
+
+---
+
+## **Best Practice Tip for Your Case**
+Since `teacherRepository.findAll()` might return entities with **lazy-loaded relationships** (e.g., `@OneToMany`), having `@Transactional` ensures:
+- The Hibernate session stays open while printing.
+- Lazy fields can be accessed without exceptions.
+
+---
+
+## **38. Pagination in Spring Data JPA**
+
+### ✅ Purpose
+- Breaks large result sets into **smaller, manageable chunks**.
+- Improves performance by **loading only what you need**.
+- Works seamlessly with `JpaRepository` via `Pageable` and `Page` interfaces.
+
+---
+
+### 📌 Key Interfaces & Classes
+| **Type** | **Purpose** |
+|----------|-------------|
+| `Pageable` | Encapsulates pagination info (page number, size, sort). |
+| `PageRequest` | Implementation of `Pageable` — used to create pagination requests. |
+| `Page<T>` | Represents a single page of results, plus metadata (total pages, total elements, etc.). |
+| `Slice<T>` | Similar to `Page` but without total count (faster for large datasets). |
+
+---
+
+### 🧠 Basic Usage
+
+#### Repository Method
+```java
+public interface StudentRepository extends JpaRepository<Student, Long> {
+    Page<Student> findByFirstName(String firstName, Pageable pageable);
+}
+```
+
+#### Service / Test Example
+```java
+Pageable pageable = PageRequest.of(0, 5, Sort.by("firstName").ascending());
+Page<Student> pageResult = studentRepository.findByFirstName("Siva", pageable);
+
+List<Student> students = pageResult.getContent();
+int totalPages = pageResult.getTotalPages();
+long totalElements = pageResult.getTotalElements();
+```
+
+---
+
+### ⚙️ `PageRequest.of(page, size, sort...)`
+- **page** → Zero-based page index (0 = first page).
+- **size** → Number of records per page.
+- **sort** → Optional sorting criteria.
+
+Example:
+```java
+PageRequest.of(1, 10, Sort.by("lastName").descending());
+```
+> Fetches the **second page** (index 1) with 10 records, sorted by `lastName` descending.
+
+---
+
+### 📊 Page vs Slice
+| Feature | `Page` | `Slice` |
+|---------|--------|---------|
+| Total count query | ✅ Yes | ❌ No |
+| Metadata (total pages, elements) | ✅ Yes | ❌ No |
+| Performance | Slower for huge datasets | Faster for streaming-like scenarios |
+
+---
+
+### ⚠️ Best Practices
+- Use **`Page`** when you need total counts (e.g., UI pagination controls).
+- Use **`Slice`** for infinite scrolling or "Load More" buttons.
+- Always **sort** results for consistent paging.
+- Avoid large page sizes — they can still cause memory issues.
+
+---
+
+### 💡 Pro Tip
+You can combine pagination with **dynamic queries**:
+```java
+Page<Student> findByFirstNameContaining(String name, Pageable pageable);
+```
+> Supports both filtering and paging in one query.
+
+---
