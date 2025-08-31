@@ -794,3 +794,80 @@ public class Student {
 - Avoid printing large collections or sensitive data.
 
 ---
+
+## **36. @OneToMany with @JoinColumn**
+
+### ✅ Purpose
+- Models a **one-to-many** relationship where **this entity is the owning side**.
+- `@JoinColumn` specifies the foreign key column in the **child table** that points back to this entity.
+- Avoids creating a join table (default for `@OneToMany` without `@JoinColumn`).
+
+---
+
+### 📌 Syntax
+```java
+@OneToMany(
+    cascade = CascadeType.ALL,
+    fetch = FetchType.LAZY
+)
+@JoinColumn(
+    name = "teacher_id",              // FK column in child table
+    referencedColumnName = "teacherId" // PK column in parent table
+)
+private List<Course> courses;
+```
+
+---
+
+### 🧠 Parameter Breakdown
+
+| Annotation / Param | Meaning |
+|--------------------|---------|
+| `@OneToMany`       | Declares a one-to-many relationship. |
+| `cascade = CascadeType.ALL` | All entity operations (persist, merge, remove, refresh, detach) are cascaded to children. |
+| `fetch = FetchType.LAZY` | Child entities are loaded **on demand** (recommended for large collections). |
+| `@JoinColumn`      | Specifies the FK column in the child table. |
+| `name`             | Name of the FK column in the child table. |
+| `referencedColumnName` | Column in the parent table that the FK references. |
+
+---
+
+### ⚠️ Best Practices
+- **Prefer `LAZY`** for collections to avoid N+1 query issues.
+- Use `CascadeType.ALL` only if child lifecycle is fully dependent on the parent.
+- Keep `mappedBy` **absent** here — since this is the owning side, `@JoinColumn` is enough.
+- Ensure the FK column (`teacher_id`) exists in the child table schema.
+
+---
+
+### ✅ Example: Teacher → Courses
+**Teacher.java**
+```java
+@OneToMany(
+    cascade = CascadeType.ALL,
+    fetch = FetchType.LAZY
+)
+@JoinColumn(name = "teacher_id", referencedColumnName = "teacherId")
+private List<Course> courses;
+```
+
+**Course.java**
+```java
+@Entity
+public class Course {
+    @Id
+    private Long courseId;
+    private String title;
+}
+```
+
+**Generated Schema (simplified)**
+```
+COURSE
+---------
+course_id   PK
+title
+teacher_id  FK → TEACHER.teacherId
+```
+
+---
