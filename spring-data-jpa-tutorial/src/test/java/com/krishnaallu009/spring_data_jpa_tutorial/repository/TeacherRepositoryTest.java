@@ -1,0 +1,41 @@
+package com.krishnaallu009.spring_data_jpa_tutorial.repository;
+
+import com.krishnaallu009.spring_data_jpa_tutorial.entity.Course;
+import com.krishnaallu009.spring_data_jpa_tutorial.entity.Teacher;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
+
+@SpringBootTest
+class TeacherRepositoryTest {
+
+    private final TeacherRepository teacherRepository;
+
+    @Autowired
+    TeacherRepositoryTest(TeacherRepository teacherRepository) {
+        this.teacherRepository = teacherRepository;
+    }
+
+    @Test
+    public void saveTeacher(){
+        Course courseDbms = Course.builder()
+                .title("DBMS")
+                .credit(4)
+                .build();
+
+        Course courseJava = Course.builder()
+                .title("Java")
+                .credit(3)
+                .build();
+
+        Teacher teacher = Teacher.builder()
+                .firstName("Bhargavi")
+                .lastName("Paka")
+                .courses(List.of(courseDbms, courseJava))
+                .build();
+        teacherRepository.save(teacher);
+    }
+
+}
