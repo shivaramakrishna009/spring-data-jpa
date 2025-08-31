@@ -2,7 +2,6 @@ package com.krishnaallu009.spring_data_jpa_tutorial.repository;
 
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.Course;
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.CourseMaterial;
-import lombok.ToString;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,8 +9,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class CourseMaterialRepositoryTest {
 
+    private final CourseMaterialRepository courseMaterialRepository;
+
     @Autowired
-    private CourseMaterialRepository courseMaterialRepository;
+    CourseMaterialRepositoryTest(CourseMaterialRepository courseMaterialRepository) {
+        this.courseMaterialRepository = courseMaterialRepository;
+    }
 
     @Test
     public void saveCourseMaterial(){
