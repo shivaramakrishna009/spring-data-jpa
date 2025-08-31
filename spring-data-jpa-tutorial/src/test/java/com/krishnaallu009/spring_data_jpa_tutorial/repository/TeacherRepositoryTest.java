@@ -2,6 +2,7 @@ package com.krishnaallu009.spring_data_jpa_tutorial.repository;
 
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.Course;
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.Teacher;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,9 +34,18 @@ class TeacherRepositoryTest {
         Teacher teacher = Teacher.builder()
                 .firstName("Bhargavi")
                 .lastName("Paka")
-                .courses(List.of(courseDbms, courseJava))
+//                .courses(List.of(courseDbms, courseJava))
+//                Above line is commented to avoid cascading issue while saving teacher without courses
+//                As we removed the OneToMany mapping from Teacher entity
                 .build();
         teacherRepository.save(teacher);
+    }
+
+    @Test
+    @Transactional
+    public void printTeachers(){
+        List<Teacher> teachers = teacherRepository.findAll();
+        System.out.println("Teachers: " + teachers);
     }
 
 }
