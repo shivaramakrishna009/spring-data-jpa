@@ -10,7 +10,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@ToString(exclude = "courses")
 public class Teacher {
     @Id
     @SequenceGenerator(
@@ -25,14 +24,4 @@ public class Teacher {
     private long teacherId;
     private String firstName;
     private String lastName;
-
-    @OneToMany(
-            cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY
-    )
-    @JoinColumn(
-            name = "teacher_id",              // FK column in child table
-            referencedColumnName = "teacherId" // PK column in parent table
-    )
-    private List<Course> courses;
 }
