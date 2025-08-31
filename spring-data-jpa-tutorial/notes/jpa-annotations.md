@@ -978,3 +978,82 @@ Since `teacherRepository.findAll()` might return entities with **lazy-loaded rel
 - Lazy fields can be accessed without exceptions.
 
 ---
+
+## **38. Pagination in Spring Data JPA**
+
+### ✅ Purpose
+- Breaks large result sets into **smaller, manageable chunks**.
+- Improves performance by **loading only what you need**.
+- Works seamlessly with `JpaRepository` via `Pageable` and `Page` interfaces.
+
+---
+
+### 📌 Key Interfaces & Classes
+| **Type** | **Purpose** |
+|----------|-------------|
+| `Pageable` | Encapsulates pagination info (page number, size, sort). |
+| `PageRequest` | Implementation of `Pageable` — used to create pagination requests. |
+| `Page<T>` | Represents a single page of results, plus metadata (total pages, total elements, etc.). |
+| `Slice<T>` | Similar to `Page` but without total count (faster for large datasets). |
+
+---
+
+### 🧠 Basic Usage
+
+#### Repository Method
+```java
+public interface StudentRepository extends JpaRepository<Student, Long> {
+    Page<Student> findByFirstName(String firstName, Pageable pageable);
+}
+```
+
+#### Service / Test Example
+```java
+Pageable pageable = PageRequest.of(0, 5, Sort.by("firstName").ascending());
+Page<Student> pageResult = studentRepository.findByFirstName("Siva", pageable);
+
+List<Student> students = pageResult.getContent();
+int totalPages = pageResult.getTotalPages();
+long totalElements = pageResult.getTotalElements();
+```
+
+---
+
+### ⚙️ `PageRequest.of(page, size, sort...)`
+- **page** → Zero-based page index (0 = first page).
+- **size** → Number of records per page.
+- **sort** → Optional sorting criteria.
+
+Example:
+```java
+PageRequest.of(1, 10, Sort.by("lastName").descending());
+```
+> Fetches the **second page** (index 1) with 10 records, sorted by `lastName` descending.
+
+---
+
+### 📊 Page vs Slice
+| Feature | `Page` | `Slice` |
+|---------|--------|---------|
+| Total count query | ✅ Yes | ❌ No |
+| Metadata (total pages, elements) | ✅ Yes | ❌ No |
+| Performance | Slower for huge datasets | Faster for streaming-like scenarios |
+
+---
+
+### ⚠️ Best Practices
+- Use **`Page`** when you need total counts (e.g., UI pagination controls).
+- Use **`Slice`** for infinite scrolling or "Load More" buttons.
+- Always **sort** results for consistent paging.
+- Avoid large page sizes — they can still cause memory issues.
+
+---
+
+### 💡 Pro Tip
+You can combine pagination with **dynamic queries**:
+```java
+Page<Student> findByFirstNameContaining(String name, Pageable pageable);
+```
+> Supports both filtering and paging in one query.
+
+---
