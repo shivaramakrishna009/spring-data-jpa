@@ -55,4 +55,22 @@ class CourseRepositoryTest {
         System.out.println("totalPages: " + totalPages);
         System.out.println("courses: " + courses);
     }
+
+    @Test
+    public void findAllSorting() {
+        PageRequest sortByTitle = PageRequest.of(0, 2,
+                Sort.by("title"));
+
+        PageRequest sortByCreditDesc = PageRequest.of(0, 2,
+                Sort.by("credit").descending());
+
+        PageRequest sortByTitleAndCreditDesc = PageRequest.of(0, 2,
+                Sort.by("title")
+                        .descending()
+                        .and(Sort.by("credit"))
+        );
+
+        List<Course> courses = courseRepository.findAll(sortByTitle).getContent();
+        System.out.println("courses: " + courses);
+    }
 }
