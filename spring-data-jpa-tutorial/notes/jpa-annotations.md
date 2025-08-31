@@ -517,5 +517,130 @@ private CourseMaterial courseMaterial;
 | **Inverse Side**| `@OneToOne(mappedBy = "course")`                              | ❌ No            | Uses FK from owning side     | Refers to the field name in the owning entity; no extra FK column is created. |
 
 ---
+# **Cascade Types in JPA**
+
+## **30. @OneToOne with Cascade**
+
+### Annotation
+```java
+@OneToOne(cascade = CascadeType.ALL)
+private Course course;
+```
+
+### **Purpose**
+- Enables **automatic propagation** of operations (like `save`, `delete`) from the **owning entity** to the **associated entity**.
+- In this case, when you persist or delete a `CourseMaterial`, the associated `Course` is also persisted or deleted.
+
+---
+
+### **CascadeType Options**
+
+| **Cascade Type**     | **Effect**                                                                 |
+|----------------------|----------------------------------------------------------------------------|
+| `ALL`                | Applies all cascade operations listed below.                              |
+| `PERSIST`            | Saves the associated entity when the parent is saved.                     |
+| `MERGE`              | Merges changes from the associated entity when the parent is merged.      |
+| `REMOVE`             | Deletes the associated entity when the parent is deleted.                 |
+| `REFRESH`            | Refreshes the associated entity when the parent is refreshed.             |
+| `DETACH`             | Detaches the associated entity when the parent is detached from the context. |
+
+---
+
+### ✅ Example
+```java
+Course course = Course.builder()
+    .title("Spring Boot")
+    .credit(6)
+    .build();
+
+CourseMaterial material = CourseMaterial.builder()
+    .url("springboot.com")
+    .course(course)
+    .build();
+
+courseMaterialRepository.save(material); // Automatically saves both CourseMaterial and Course
+```
+
+---
+
+### 💡 Best Practices
+- Use `CascadeType.ALL` only when the lifecycle of the child entity is **fully dependent** on the parent.
+- For shared entities (like `Course` used in multiple places), avoid cascading `REMOVE` to prevent accidental deletions.
+
+---
+
+## **31. CascadeType Explained**
+
+### ✅ Overview
+Cascade defines how operations on the **parent entity** affect the **associated child entity**. You can fine-tune behavior by choosing specific cascade types instead of using `ALL`.
+
+---
+
+### 🔍 Individual Cascade Types
+
+| **Cascade Type** | **Description** | **When to Use** |
+|------------------|------------------|------------------|
+| `PERSIST`        | Saves the child when the parent is saved. | When child entities are new and should be saved with the parent. |
+| `MERGE`          | Updates the child when the parent is merged. | Useful in detached entity scenarios (e.g., DTO → Entity conversion). |
+| `REMOVE`         | Deletes the child when the parent is deleted. | Only if the child shouldn't exist independently. |
+| `REFRESH`        | Reloads the child from the database when the parent is refreshed. | When you want both entities to reflect the latest DB state. |
+| `DETACH`         | Detaches the child when the parent is detached from the persistence context. | Rarely used directly; useful in advanced session management. |
+
+---
+
+### 🧠 Practical Examples
+
+#### 1. `CascadeType.PERSIST`
+```java
+@OneToOne(cascade = CascadeType.PERSIST)
+private Profile profile;
+```
+> Saving `User` will also save `Profile`, but deleting `User` won’t delete `Profile`.
+
+---
+
+#### 2. `CascadeType.MERGE`
+```java
+@OneToOne(cascade = CascadeType.MERGE)
+private Address address;
+```
+> When updating a detached `Customer`, changes in `Address` will be merged too.
+
+---
+
+#### 3. `CascadeType.REMOVE`
+```java
+@OneToOne(cascade = CascadeType.REMOVE)
+private Avatar avatar;
+```
+> Deleting `User` will also delete the associated `Avatar`.
+
+---
+
+#### 4. `CascadeType.REFRESH`
+```java
+@OneToOne(cascade = CascadeType.REFRESH)
+private Settings settings;
+```
+> Refreshing `AppConfig` will also reload `Settings` from DB.
+
+---
+
+#### 5. `CascadeType.DETACH`
+```java
+@OneToOne(cascade = CascadeType.DETACH)
+private Session session;
+```
+> Detaching `User` from persistence context will also detach `Session`.
+
+---
+
+### ⚠️ Best Practice Tips
+- Prefer **explicit cascade types** over `ALL` unless you're sure the child entity is tightly coupled.
+- Avoid `REMOVE` if the child is reused elsewhere — it can lead to unintended deletions.
+- Use `MERGE` and `PERSIST` in DTO-to-Entity conversion flows.
+
+---
+
 
 

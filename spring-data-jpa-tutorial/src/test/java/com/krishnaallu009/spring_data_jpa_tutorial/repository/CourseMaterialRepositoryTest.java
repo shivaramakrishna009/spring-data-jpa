@@ -4,9 +4,9 @@ import com.krishnaallu009.spring_data_jpa_tutorial.entity.Course;
 import com.krishnaallu009.spring_data_jpa_tutorial.entity.CourseMaterial;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+@SpringBootTest
 class CourseMaterialRepositoryTest {
 
     @Autowired
@@ -28,6 +28,3 @@ class CourseMaterialRepositoryTest {
     }
 
 }
-
-//commit message:
-//
